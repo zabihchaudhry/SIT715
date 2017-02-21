@@ -1,0 +1,29 @@
+---
+applications:
+- name: SIT715
+  buildpack: noop-buildpack
+  memory: 1M
+  disk-quota: 128K
+  path: bridge-app
+  no-hostname: true
+  no-route: true
+  env:
+    EXAMPLE_ENV_1: value1
+    EXAMPLE_ENV_2: value2
+  services:
+    - bridge-app-database
+    - bridge-app-object-store
+    - app-auto-scaling
+  host: SIT715
+declared-services:
+  bridge-app-database:
+    label: cleardb
+    plan: spark
+  bridge-app-object-store:
+    label: Object-Storage
+    plan: Free
+  app-auto-scaling:
+    label: Auto-Scaling
+    plan: free
+
+  
