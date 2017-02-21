@@ -1,0 +1,80 @@
+#!/bin/sh
+
+SPACE="dev"
+DOMAIN="mybluemix.net"
+
+## Begin: bridge app creation and startup
+
+cf target -s $SPACE;
+
+
+cf create-service \
+	cleardb \
+	spark \
+	bridge-app-database;
+
+
+cf create-service \
+	Object-Storage \
+	Free \
+	bridge-app-object-store;
+
+	
+cf push;
+
+## End: bridge app creation and startup
+
+
+
+
+
+cf ic init
+
+
+
+
+
+## Begin: phpinfo docker image creation and execution
+
+cf ic build -t phpinfo_image containers/phpinfo/
+
+
+cf ic run \
+	-P \
+	--env 'CCS_BIND_APP=bridge-app-name' \
+	--name phpinfo_instance \
+	registry.ng.bluemix.net/avibrazil/phpinfo_image
+
+
+IP=`cf ic ip request | grep "IP address" | sed -e "s/.* \"\(.*\)\" .*/\1/"`
+
+
+cf ic ip bind $IP phpinfo_instance
+
+## End: phpinfo docker image creation and execution
+
+
+
+
+
+
+
+## Begin: wordpress docker image creation and group execution
+
+cf ic build -t wordpress_image containers/wordpress/
+
+cf ic group create \
+	-P \
+	--env 'CCS_BIND_APP=bridge-app-name' \
+	--auto \
+	--desired 2 \
+	--name wordpress_group_instance \
+	registry.ng.bluemix.net/avibrazil/wordpress_image
+
+
+cf ic route map \
+	--hostname some-name-wordpress \
+	--domain $DOMAIN \
+	wordpress_group_instance
+
+## End: wordpress docker image creation and group execution
